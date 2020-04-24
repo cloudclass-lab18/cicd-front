@@ -31,24 +31,39 @@ containerTemplate(name: 'npm', image: 'node:lts', command: 'cat', ttyEnabled: tr
 		echo "TimeStamp: ${timeStamp}"
 		tag = tag+"-"+timeStamp
 
-		// #3 빌드 Stage
-			stage('Build') {     container('npm') {         sh "npm install"     } } 
-
-		// #4 Sonarqube 정적분석 Stage
-stage('Static Code Analysis') {  container('scanner') {    sh "sonar-scanner \    -Dsonar.projectName=${sonarQubeProject} \     -Dsonar.host.url=${sonarQubeURL} \     -Dsonar.projectBaseDir=./”  } } 
-		// #5 컨테이너 이미지 생성 Stage
-stage('Dockerizing') {     container('docker') {         docker.withRegistry("${dockerRegistry}", "${credentialRegistry}") {             sh "docker build -f ./Dockerfile -t ${image}:${tag} ${WORKSPACE}"              sh "docker push ${image}:${tag}"             sh "docker tag ${image}:${tag} ${image}:latest"             sh "docker push ${image}:latest"         }     } } 
-		// #6 배포 Stage
-stage('Deploy') {     container('kubectl') {         sh "kubectl apply -n ${namespace} -f ${deployment}" 
-
- 
-        sh "kubectl apply -n ${namespace} -f ${service}"         sh "kubectl get svc -n devops"      } }
+		// #3 Sonarqube 정적분석 Stage
+		stage('Static Code Analysis') {
+			container('scanner') {
+				sh "sonar-scanner \
+					-Dsonar.projectKey=${sonarQubeProject} \
+					-Dsonar.projectName=${sonarQubeProject} \
+					-Dsonar.projectBaseDir=./ \
+					-Dsonar.host.url=${sonarQubeURL}"
+			}
+		}
+		// #4 컨테이너 이미지 생성 Stage
+		stage('Dockerizing') {
+			container('docker') {
+				docker.withRegistry("${dockerRegistry}", "${credentialRegistry}") {
+					sh "docker build -f ./Dockerfile -t ${image}:${tag} ${WORKSPACE}"
+					sh "docker push ${image}:${tag}"
+					sh "docker tag ${image}:${tag} ${image}:latest"
+					sh "docker push ${image}:latest"
+				}
+			}
+		}
+		// #5 배포 Stage
+		stage('Deploy') {
+      		container('kubectl') {
+				sh "kubectl apply -n ${namespace} -f ${deployment}"
+				sh "kubectl apply -n ${namespace} -f ${service}"
+				sh "kubectl set image deployment ${appname} ${containername}=${image}:${tag} -n ${namespace}"
+				sh "kubectl get svc -n ${namespace}"
+      		}
+    	}
 		// Slack - 빌드 성공시
-
-
 	} catch(e) {
 		// Slack - 빌드 실패시
-
 	}
   }
 }
