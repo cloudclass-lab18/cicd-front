@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
         - name:  frontend-lab18
-          image: bible21/frontend-lan18
+          image: cloudclass-lab18/cicd-front
           imagePullPolicy: Always
           ports:
             - containerPort: 3000
