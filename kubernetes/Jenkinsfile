@@ -12,9 +12,9 @@ containerTemplate(name: 'npm', image: 'node:lts', command: 'cat', ttyEnabled: tr
 		// Slack - 빌드 시작시
 
 		// #1 Github 소스 가져오기
-                stage('Get Source') {     git credentialsId: 'github-lab18', url: 'https://github.com/cloudclass-lab18', branch: 'master' } 
+                stage('Get Source') {     git credentialsId: 'github-lab18', url: 'https://github.com/cloudclass-lab18/cicd-front.git', branch: 'master' } 
 		// #2 Properties 파일 읽기		
-                def props = readProperties file:"/kubernetes/pipeline.properties"  def tag = props["version"] def dockerRegistry = props["dockerRegistry"] def credentialRegistry=props["credentialRegistry"]  def image = props["image"] def appname = props["appname"] def containername = props["containerName"] def deployment = props["deployment"] def service = props["service"] def namespace = props["namespace"] def sonarQubeURL = props["sonarQubeURL"] def sonarQubeProject = props["sonarQubeProject"]  
+                def props = readProperties file:"./kubernetes/pipeline.properties"  def tag = props["version"] def dockerRegistry = props["dockerRegistry"] def credentialRegistry=props["credentialRegistry"]  def image = props["image"] def appname = props["appname"] def containername = props["containerName"] def deployment = props["deployment"] def service = props["service"] def namespace = props["namespace"] def sonarQubeURL = props["sonarQubeURL"] def sonarQubeProject = props["sonarQubeProject"]  
 		// 재배포를 위한 tag를 재정의
 		def timeStamp = System.currentTimeMillis()
 		echo "TimeStamp: ${timeStamp}"
