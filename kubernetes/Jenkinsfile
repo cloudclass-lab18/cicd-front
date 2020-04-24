@@ -1,36 +1,44 @@
 def label = "worker-${UUID.randomUUID().toString()}"
-
 // Slack 알림
-
 podTemplate(label: label, containers: [
-containerTemplate(name: 'npm', image: 'node:lts', command: 'cat', ttyEnabled: true),   //containerTemplate(name: 'gradle', image: 'gradle:4.5.1-jdk8', command: 'cat', ttyEnabled: true),   //containerTemplate(name: 'maven', image: 'maven:3.3.9-jdk-8-alpine', ttyEnabled: true, command: 'cat'),   containerTemplate(name: "scanner", image: "newtmitch/sonar-scanner", ttyEnabled: true, command: "cat"),   containerTemplate(name: 'docker', image: 'docker:dind', command: 'dockerd -host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:2375 --storage-driver=overlay', ttyEnabled: true, alwaysPullImage: true, privileged: true),   containerTemplate(name: 'kubectl', image: 'roffe/kubectl', command: 'cat', ttyEnabled: true)
+  containerTemplate(name: 'npm', image: 'node:lts', command: 'cat', ttyEnabled: true),
+  //containerTemplate(name: 'gradle', image: 'gradle:4.5.1-jdk8', command: 'cat', ttyEnabled: true),
+  //containerTemplate(name: 'maven', image: 'maven:3.3.9-jdk-8-alpine', ttyEnabled: true, command: 'cat'),
+  containerTemplate(name: "scanner", image: "newtmitch/sonar-scanner", ttyEnabled: true, command: "cat"),
+  containerTemplate(name: 'docker', image: 'docker:dind', command: 'dockerd --host=unix:///var/run/docker.sock --host=tcp://0.0.0.0:2375 --storage-driver=overlay', ttyEnabled: true, alwaysPullImage: true, privileged: true),
+  containerTemplate(name: 'kubectl', image: 'roffe/kubectl', command: 'cat', ttyEnabled: true)
 ]) {
   node(label) {
-
 	// 예외처리 구문
 	try {
 		// Slack - 빌드 시작시
-
-		// #1 Github 소스 가져오기
-                stage('Get Source') {     git credentialsId: 'github-lab18', url: 'https://github.com/cloudclass-lab18/cicd-front.git', branch: 'master' } 
-		// #2 Properties 파일 읽기		
-                def props = readProperties file:"./kubernetes/pipeline.properties"
-		def tag = props["version"] 
-		def dockerRegistry = props["dockerRegistry"] 
-		def credentialRegistry=props["credentialRegistry"]  
-		def image = props["image"] 
-		def appname = props["appname"] 
-		def containername = props["containerName"] 
-		def deployment = props["deployment"] 
-		def service = props["service"] 
-		def namespace = props["namespace"] 
-		def sonarQubeURL = props["sonarQubeURL"] 
-		def sonarQubeProject = props["sonarQubeProject"]  
-		// 재배포를 위한 tag를 재정의
-		def timeStamp = System.currentTimeMillis()
-		echo "TimeStamp: ${timeStamp}"
-		tag = tag+"-"+timeStamp
-
+		// #0 Github 소스 가져오기
+		stage('Get Source') {
+			git credentialsId: 'github-lab18', url: 'https://github.ibm.com/cloudclass-lab18/cicd-front.git', branch: 'master'
+	    }
+        // #1 Properties 파일 읽기
+    	def props = readProperties  file:"./kubernetes/pipeline.properties"
+    	def tag = props["version"]
+    	def dockerRegistry = props["dockerRegistry"]
+    	def credentialRegistry=props["credentialRegistry"]
+    	def image = props["image"]
+    	def appname = props["appname"]
+    	def containername = props["containerName"]
+    	def deployment = props["deployment"]
+    	def service = props["service"]
+    	def namespace = props["namespace"]
+    	def sonarQubeURL = props["sonarQubeURL"]
+    	def sonarQubeProject = props["sonarQubeProject"]
+        // 재배포를 위한 tag를 재정의
+        def timeStamp = System.currentTimeMillis()
+        echo "TimeStamp: ${timeStamp}"
+        tag = tag+"-"+timeStamp
+		// #2 빌드 Stage
+		stage('Build') {
+			container('npm') {
+				sh "npm install"
+			}
+		}
 		// #3 Sonarqube 정적분석 Stage
 		stage('Static Code Analysis') {
 			container('scanner') {
