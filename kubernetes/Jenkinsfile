@@ -12,7 +12,7 @@ containerTemplate(name: 'npm', image: 'node:lts', command: 'cat', ttyEnabled: tr
 		// Slack - 빌드 시작시
 
 		// #1 Github 소스 가져오기
-                stage('Get Source') {     git credentialsId: 'github-lab18', url: 'https://github.com/cloudclass-lab18/cicd-front.git', branch: 'master' } 
+                stage('Get Source') {     git credentialsId: 'github-lab18', url: 'https://github.ibm.com/kisjang/cicd-front.git', branch: 'master' } 
 		// #2 Properties 파일 읽기		
                 def props = readProperties file:"./kubernetes/pipeline.properties"
 		def tag = props["version"] 
